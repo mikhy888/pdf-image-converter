@@ -1,8 +1,9 @@
 fastapi
 uvicorn
 python-multipart
-pymupdf
+pymupdf>=1.24
 opencv-python-headless
 pytesseract
 pillow
 numpy
+anthropic   # optional: semantic roles + OCR fixes (set ANTHROPIC_API_KEY)
