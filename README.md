@@ -185,3 +185,6 @@ For production deployments, configure the API key through your hosting platform'
 - **Language Support:** Install the appropriate Tesseract language data for multilingual OCR.
 - **Offline HTML:** Exported HTML packages require no Python dependencies. They currently load the Oswald font from Google Fonts. For offline use, download the font and include it locally using CSS `@font-face`.
 - **Future Enhancements:** Background processing for large PDFs can be implemented using Celery with Redis or ARQ.
+
+- <img width="1428" height="383" alt="image" src="https://github.com/user-attachments/assets/c8031048-23c0-4fe6-84b7-9fdb9ea277bc" />
+
