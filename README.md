@@ -1,15 +1,19 @@
 # pdf-image-converter
 Converts the image of PDF intp HTML
 
-## Software Requirements & Setup
+## Installation & Setup
 
-This project requires Python packages and one additional system-level program: **Tesseract OCR**.
+This application uses Python, FastAPI, Tesseract OCR, and the Anthropic Claude API to process PDF documents and generate enhanced HTML output.
 
-### 1. Python Requirements
+### 1. Requirements
 
-Python **3.9 or newer** is required.
+- Python 3.9 or newer
+- Tesseract OCR
+- Anthropic API key
 
-Create a `requirements.txt` file in your project root directory with the following dependencies:
+### 2. Install Python Dependencies
+
+Create a `requirements.txt` file with the following packages:
 
 ```txt
 fastapi
@@ -20,198 +24,164 @@ opencv-python-headless
 pytesseract
 pillow
 numpy
+anthropic
 ```
 
-#### Install Dependencies
-
-It is recommended to use a Python virtual environment.
+Create and activate a virtual environment, then install the dependencies:
 
 ```bash
-# Create a virtual environment
+# Create virtual environment
 python -m venv venv
 
-# Activate the virtual environment
-
-# Linux / macOS
+# Activate (Linux / macOS)
 source venv/bin/activate
 
 # Windows
 venv\Scripts\activate
 
-# Install Python dependencies
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-#### Package Overview
+**Package overview:**
 
 | Package | Purpose |
 |---|---|
-| `fastapi` | Provides the web framework and API endpoints. |
-| `uvicorn` | Runs the FastAPI application. |
-| `python-multipart` | Enables file uploads through FastAPI. |
-| `pymupdf` | Converts PDF pages into images without requiring Poppler or additional rendering tools. |
-| `opencv-python-headless` | Processes images and removes text from background images. |
-| `pytesseract` | Python wrapper for the Tesseract OCR engine. |
-| `pillow` | Provides image processing and manipulation functionality. |
-| `numpy` | Supports image processing and colour sampling operations. |
+| `fastapi`, `uvicorn` | Web server and API |
+| `python-multipart` | File uploads |
+| `pymupdf` | PDF-to-image conversion |
+| `opencv-python-headless` | Image processing and text removal |
+| `pytesseract` | OCR integration |
+| `pillow`, `numpy` | Image handling and colour processing |
+| `anthropic` | Claude API integration for improved HTML structure |
 
-> **Note:** Use `opencv-python-headless` instead of `opencv-python` when deploying on a server. It does not include unnecessary GUI dependencies.
+### 3. Install Tesseract OCR
 
-### 2. Install Tesseract OCR
+Tesseract must be installed separately from the Python packages.
 
-`pytesseract` is only a Python wrapper. The actual **Tesseract OCR engine** must be installed separately on your system.
-
-Install Tesseract according to your operating system:
-
-#### Ubuntu / Debian
-
+**Ubuntu / Debian**
 ```bash
-sudo apt update
 sudo apt install tesseract-ocr
 ```
 
-#### macOS
-
+**macOS**
 ```bash
 brew install tesseract
 ```
 
-#### Windows
+**Windows**
 
-1. Download the Tesseract installer from the [UB Mannheim Tesseract OCR builds](https://github.com/UB-Mannheim/tesseract/wiki).
-2. Install Tesseract OCR.
-3. Add the Tesseract installation directory to your system's `PATH` environment variable.
+Download and install Tesseract from the [UB Mannheim Tesseract builds](https://github.com/UB-Mannheim/tesseract/wiki), then add its installation directory to your system PATH.
 
-Alternatively, if Tesseract is not available in your system's `PATH`, specify its executable location near the top of `app.py`:
-
-```python
-import pytesseract
-
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-)
-```
-
-#### Additional Language Support
-
-For OCR processing in languages other than English, install the corresponding Tesseract language data.
-
-For example, on Ubuntu:
-
-```bash
-sudo apt install tesseract-ocr-ara
-```
-
-You can specify multiple languages in your OCR processing code:
-
-```python
-pytesseract.image_to_data(image, lang="eng+ara")
-```
-
-Replace `ara` with the appropriate language code when needed.
-
-#### Verify Installation
-
-Run the following command to verify that Tesseract is installed correctly:
+Verify the installation:
 
 ```bash
 tesseract --version
 ```
 
-### 3. Run the Application
+For additional language support, install the corresponding Tesseract language data.
 
-Once all dependencies and Tesseract OCR are installed, start the FastAPI application using:
+### 4. Configure Anthropic Claude API
+
+The application uses the Anthropic Claude API to enhance the generated HTML, including better content structuring and semantic heading identification.
+
+**Step 1: Get an API key**
+
+1. Create an account at the [Anthropic Console](https://console.anthropic.com/).
+2. Generate an API key from the API keys section.
+3. Ensure API billing or credits are configured.
+
+**Step 2: Configure the API key**
+
+The application reads the key from the `ANTHROPIC_API_KEY` environment variable.
+
+On macOS / Linux:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:ANTHROPIC_API_KEY="sk-ant-your-key-here"
+```
+
+Alternatively, you can use a `.env` file by installing `python-dotenv`:
+
+```bash
+pip install python-dotenv
+```
+
+Create `.env` in the project directory:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+Add the following to the beginning of `app.py`:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+Make sure `.env` is included in `.gitignore` to prevent accidental exposure of your API key.
+
+**Note:** The Claude enhancement step is optional at runtime. If the API call fails, the application skips that step and continues the standard conversion process. Check the terminal for messages beginning with `Claude step skipped:` if troubleshooting is needed.
+
+### 5. Run the Application
+
+Start the FastAPI server:
 
 ```bash
 uvicorn app:app --reload
 ```
 
-The application will be available at:
+Access the application at:
 
 **http://127.0.0.1:8000**
 
-You can also access the automatically generated API documentation at:
+API documentation:
 
 **http://127.0.0.1:8000/docs**
 
-### 4. Docker Deployment (Optional)
+### 6. Docker Deployment (Optional)
 
-If you prefer to deploy the application using Docker, the following Dockerfile provides a basic setup.
-
-Create a file named `Dockerfile` in your project root directory:
+A basic Dockerfile:
 
 ```dockerfile
 FROM python:3.12-slim
 
-# Install Tesseract OCR
 RUN apt-get update && \
     apt-get install -y tesseract-ocr && \
     rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code
-COPY app.py .
+COPY . .
 
-# Start FastAPI application
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-Build the Docker image:
+Build and run:
 
 ```bash
 docker build -t pdf-ocr-app .
+
+docker run -p 8000:8000 \
+  -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+  pdf-ocr-app
 ```
 
-Run the container:
+For production deployments, configure the API key through your hosting platform's environment variables or secrets manager rather than hardcoding it.
 
-```bash
-docker run -p 8000:8000 pdf-ocr-app
-```
+### 7. Additional Notes
 
-The application will then be accessible at:
-
-**http://localhost:8000**
-
-> **Note:** If your application contains additional source files or directories, make sure to include them in the Docker image.
-
-### 5. Optional Dependencies & Future Enhancements
-
-The following dependencies can be added when extending the application's functionality.
-
-| Dependency | Use Case | Installation |
-|---|---|---|
-| `anthropic` | Integrating the Claude API for AI-powered processing. | `pip install anthropic` |
-| `celery` | Managing background tasks for large PDF processing jobs. | `pip install celery` |
-| `redis` | Providing a message broker and backend for Celery tasks. | Install Redis separately. |
-| `arq` | Managing asynchronous background jobs using Redis. | `pip install arq` |
-
-### 6. Exported HTML Packages
-
-The exported HTML packages do not require any additional Python dependencies or installation.
-
-They currently load the **Oswald font** from Google Fonts.
-
-For offline use (such as offline IVAs), download the Oswald font files and include them in each exported HTML package. Then configure the font using CSS `@font-face`.
-
-Example:
-
-```css
-@font-face {
-    font-family: 'Oswald';
-    src: url('./fonts/Oswald-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-}
-
-body {
-    font-family: 'Oswald', sans-serif;
-}
-```
-
-This ensures that exported HTML packages can display the intended typography without requiring an internet connection.
+- **API Security:** Never commit API keys or `.env` files to GitHub.
+- **Language Support:** Install the appropriate Tesseract language data for multilingual OCR.
+- **Offline HTML:** Exported HTML packages require no Python dependencies. They currently load the Oswald font from Google Fonts. For offline use, download the font and include it locally using CSS `@font-face`.
+- **Future Enhancements:** Background processing for large PDFs can be implemented using Celery with Redis or ARQ.
